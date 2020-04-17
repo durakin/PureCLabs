@@ -368,7 +368,7 @@ void AddRoom(Hotel* objectHotel, int number, int capacity, int roomType)
     // int number - номер комнаты
     // int capacity - вместимость номера
     // int roomType - комфортабельность номера
-   if (!objectHotel->isFilled)
+    if (!objectHotel->isFilled)
     {
         objectHotel->size = 1;
         objectHotel->rooms = (Room*) malloc(sizeof(Room));

@@ -60,7 +60,7 @@ int CycleInputInt(char* stringToOutput, bool(* pChecker)(int))
     return number;
 }
 
-bool OperationInputChecker(int operationCode)
+bool MainMenuInputChecker(int operationCode)
 {
     // Функция для вызова в функциях ввода с проверкой.
     // ... Возвращает true, если введенное значение может быть
@@ -110,7 +110,7 @@ int main()
                "2. Quit.\n");
         operationCode = CycleInputInt(
                 "Choose the command and enter its number",
-                OperationInputChecker);
+                MainMenuInputChecker);
 
         // Получение числа N и проведение всех вычислений
         if (operationCode == CALCULATE)

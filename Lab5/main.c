@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdlib.h>
 
 
 enum Sizes
@@ -21,26 +22,35 @@ enum SymbolCodes
 
 enum OperationsCodes
 {
-    // Перечисление кодов операций для организации главного меню.
+    // Перечисление кодов операций для организации всех меню.
+    // Команды для главного меню.
     LOAD_FROM_FILE = 1,
     SAVE_TO_FILE = 2,
     ADD_ROOM = 3,
     DELETE_ROOM = 4,
     PRINT = 5,
-    PRINT_SORTED = 6,
-    PRINT_SORTED_BY_PRICE = 1,
-    PRINT_SORTED_BY_CAPACITY = 2,
-    PRINT_SORTED_BY_TYPE = 3,
-    FILTER_SETTINGS = 7,
-    SET_FILTERS = 1,
-    RESET_FILTERS = 2,
-    QUIT = 8
+    SORT = 6,
+    FILTERS = 7,
+    FIND_BY_NUMBER = 8,
+    QUIT = 9,
+    // Команды для меню сортировки.
+    SORT_BY_PRICE = 1,
+    SORT_BY_CAPACITY = 2,
+    SORT_BY_TYPE = 3,
+    SORT_BY_NUMBER = 4,
+    SORT_CANCEL = 5,
+    // Команды для меню настройки фильтров.
+    FILTERS_SET = 1,
+    FILTERS_RESET = 2,
+    FILTERS_CANCEL = 3
+
 };
 
 
 enum RoomTypes
 {
-    // Перечисление типов комнат по комфортабельности
+    // Перечисление типов комнат по комфортабельности,
+    // вместе с этим - множителей в формуле цены номера.
     JUNISUITE = 1,
     STUDIO = 2,
     LUX = 3,
@@ -51,71 +61,12 @@ enum RoomTypes
 
 enum PriceFactors
 {
-    // Перечисление множителей для вычисления стоимости комнат
-    // (эти числа и формулы выбраны произвольно)
+    // Перечисление множителей для вычисления стоимости комнат.
+    // Эти числа и формулы выбраны произвольно, задание их
+    // пользоватлем не предусмотрено заданием.
     BASE_PRICE = 625,
     BASE_CAPACITY_PRICE = 500
 };
-
-
-char* StrDynInput()
-{
-    // Функция для ввода строки без указания длины
-    // источник - Лекция 3. Строки. Массивы строк. Операции над строками.pdf
-    char* userStr = (char*) malloc(1 * sizeof(char));
-    userStr[0] = '\0';
-    char curChar = 0;
-    int curSize = 1;
-    while (curChar != '\n')
-    {
-        curChar = getchar();
-        int deltaVal = 0; // Определяет, на сколько изменится длина массива
-        int lengthDif = 0;
-        // Если мы ситраем символы, а не пишем их,
-
-        if (curChar >= START_CHAR_RANGE && curChar <=
-                                           END_CHAR_RANGE)
-        {
-            deltaVal = 1; // Если да, то будем увеличиватьдлину на 1
-            lengthDif = 2; // Не заполняем последние 2 символа -
-            // оставлем мето для введённого символа и 0
-        }
-        else
-        {
-            continue;
-        } // Если это не печатный символ, то пропускаем его
-
-        // Если стирать больше нечего, но пользователь всё равно жмёт Backspace,
-        int newSize = curSize + deltaVal;
-        if (newSize == 0)
-        {
-            continue;
-        } // то мы переходим на следующую итерацию - ждём '\n'
-        char* tmpStr = (char*) malloc(newSize * sizeof(char));
-        if (tmpStr) // Проверяем, выделилась ли память
-        {
-            // Идём до предпоследнего символа, т.к. надо в конец записать 0
-            for (int i = 0; i < newSize - lengthDif; ++i)
-            {
-                tmpStr[i] = userStr[i];
-            }
-
-            tmpStr[newSize - 2] = curChar; // Добавляем символ в строку
-
-            tmpStr[newSize - 1] = '\0';
-            free(userStr);
-            userStr = tmpStr;
-            curSize = newSize;
-        }
-        else
-        {
-            printf("Couldn't allocate memory!");
-            break;
-        }
-    }
-
-    return userStr;
-}
 
 
 int CycleInputInt(char* stringToOutput, bool(* pChecker)(int))
@@ -163,34 +114,11 @@ int CycleInputInt(char* stringToOutput, bool(* pChecker)(int))
 }
 
 
-char* CycleInputString(char* stringToOutput, bool(* pChecker)(char*))
-{
-    // Функция для ввода строки с проверкой ввода.
-    //
-    // char* stringToOutput - строка, которую нужно выводить
-    // ... в запросе ввода;
-    // bool(* pChecker)(char*) - указатель на функцию, проверяющую
-    // ... дополнительные условия.
-    printf("%s\n", stringToOutput);
-    char* stringToReturn;
-    while (true)
-    {
-        stringToReturn = StrDynInput();
-        if (pChecker(stringToReturn))
-        {
-            return stringToReturn;
-        }
-        printf("Wrong format!\n");
-        free(stringToReturn);
-    }
-}
-
-
-bool OperationInputChecker(int operationCode)
+bool MainMenuInputChecker(int operationCode)
 {
     // Функция для вызова в функциях ввода с проверкой.
     // ... Возвращает true, если введенное значение может быть
-    // значением кода операции в меню.
+    // значением кода операции в главном меню.
     //
     // int operationCode - число, которое нужно проверить.
 
@@ -200,89 +128,247 @@ bool OperationInputChecker(int operationCode)
 
 bool PositiveIntInputChecker(int intToCheck)
 {
+    // Функция для вызова в функциях ввода с проверкой.
+    // ... Возвращает true, если введенное значение является положительным
+    // ... числом. В настоящей программе такие значения должны принимать
+    // значения вместимости и цены номера.
+    //
+    // int intToCheck - число, которое нужно проверить.
     return intToCheck > 0;
 }
 
 
 bool RoomTypeInputChecker(int roomType)
 {
+    // Функция для вызова в функциях ввода с проверкой.
+    // ... Возвращает true, если введенное значение может быть
+    // значением комфортабельности номера.
+    //
+    // int roomType - число, которое нужно проверить.
     return roomType >= JUNISUITE && roomType <= SUITE;
+}
+
+
+bool SortMenuInputChecker(int operationCode)
+{
+    // Функция для вызова в функциях ввода с проверкой.
+    // ... Возвращает true, если введенное значение может быть
+    // значением кода операции в меню сортировки.
+    //
+    // int operationCode - число, которое нужно проверить.
+    return operationCode >= SORT_BY_PRICE &&
+           operationCode <= SORT_CANCEL;
+}
+
+
+bool FilterMenuInputChecker(int operationCode)
+{
+    // Функция для вызова в функциях ввода с проверкой.
+    // ... Возвращает true, если введенное значение может быть
+    // значением кода операции в меню настройки фильтров.
+    //
+    // int operationCode - число, которое нужно проверить.
+    return operationCode >= FILTERS_SET && operationCode <= FILTERS_CANCEL;
 }
 
 
 typedef struct
 {
-    int number;
-    int capacity;
-    int roomType;
-    int price;
+    // Структура для хранения информации о номерах.
+    int number;    // Номер комнаты
+    int capacity;    // Вместимость номера
+    int roomType;    // Комфортабельность номера
+    int price;    // Цена номера
 } Room;
 
 
 typedef struct
 {
-    int basePrice;
-    int baseCapacityPrice;
-    int size;
-    Room* rooms;
-    bool* isFilled;
+    // Структура для хранения информации о фитрации номеров.
+    bool isFiltered;    // Включен ли фильтр
+    int minCapacity;    // Минимальная вместимость номера
+    int roomType;    // Комфортабельность номера
+    int maxPrice;    // Макисмальная цена номера
+    int minPrice;    // Минимальная цена номера
+} Filter;
+
+
+typedef struct
+{
+    // Структура для хранения набора номеров.
+    int basePrice;    // Множитель в формуле цены номера
+    int baseCapacityPrice;    // Множитель в формуле цены номера
+    int size;    // Количество номеров
+    Room* rooms;    // Массив номеров
+    bool* isFilled;    // Была ли выделена память
 } Hotel;
 
 
 void CalculateRoomPrice(Room* objectRoom, Hotel* objectHotel)
 {
+    // Функция для назначения цены на номер.
+    // ... Присвивает полю price указанного номера значение,
+    // ... вычисленное по формуле, заданной автором произвольно
+    //  с использованием множителей указанного набора номеров.
+    //
+    // Room* objectRoom - указатель на номер, цену которого
+    // ... назначем
+    // Hotel* objectHotel - указатель на набор номеров, в котором
+    // ... хранятся нужные множители
     objectRoom->price = objectHotel->basePrice * objectRoom->roomType +
                         objectHotel->baseCapacityPrice * objectRoom->capacity;
 }
 
 
-void FreeHotel(Hotel* hotelToFree)
+void FreeHotel(Hotel* objectHotel)
 {
-    if (hotelToFree->isFilled)
+    // Функция для очистки памяти, выделенной под objectHotel
+    if (objectHotel->isFilled)
     {
-        free(hotelToFree->rooms);
+        free(objectHotel->rooms);
+        objectHotel->isFilled = false;
     }
 }
 
 
-void LoadHotel(FILE* saveFile, Hotel* newHotel)
+void LoadHotel(FILE* saveFile, Hotel* objectHotel)
 {
-    FreeHotel(newHotel);
-    //Hotel newHotel;
-    fscanf(saveFile, "%d", &newHotel->basePrice);
-    fscanf(saveFile, "%d", &newHotel->baseCapacityPrice);
-    fscanf(saveFile, "%d", &newHotel->size);
-    newHotel->rooms = (Room*) malloc(newHotel->size * sizeof(Room));
-    for (int i = 0; i < newHotel->size; i++)
+    // Функция для загрузки набора номеров из документа.
+    // ... Работа функции в случае "повреждения" данных из-за
+    // ... редактирования нештатным образом не определена.
+    // ... Гарантируется, что файл, созданный функцией SaveHotel()
+    // будет обработан корректно.
+    //
+    // FILE* saveFile - документ с данными
+    // Hotel* objectHotel - указатель на набор комнат, который будет заполнен
+    // ... данными из документа
+    FreeHotel(objectHotel);
+    fscanf(saveFile, "%d", &objectHotel->basePrice);
+    fscanf(saveFile, "%d", &objectHotel->baseCapacityPrice);
+    fscanf(saveFile, "%d", &objectHotel->size);
+    objectHotel->rooms = (Room*) malloc(objectHotel->size * sizeof(Room));
+    for (int i = 0; i < objectHotel->size; i++)
     {
         Room newRoom;
         fscanf(saveFile, "%d", &newRoom.number);
         fscanf(saveFile, "%d", &newRoom.capacity);
         fscanf(saveFile, "%d", &newRoom.roomType);
-        CalculateRoomPrice(&newRoom, newHotel);
-        newHotel->rooms[i] = newRoom;
+        CalculateRoomPrice(&newRoom, objectHotel);
+        objectHotel->rooms[i] = newRoom;
     }
-    newHotel->isFilled = true;
+    objectHotel->isFilled = true;
 }
 
 
-void SaveHotel(FILE* saveFile, Hotel* hotelToSave)
+void SaveHotel(FILE* saveFile, Hotel* objectHotel)
 {
-    fprintf(saveFile, "%d\n", hotelToSave->basePrice);
-    fprintf(saveFile, "%d\n", hotelToSave->baseCapacityPrice);
-    fprintf(saveFile, "%d\n", hotelToSave->size);
-    for (int i = 0; i < hotelToSave->size; i++)
+    // Функция для создания файла сохранения набора номеров.
+    //
+    // FILE* saveFile - документ с данными (был создан или перезаписан)
+    // Hotel* objectHotel - указатель на набор комнат, который будет сохранен
+    // ... в документе
+    fprintf(saveFile, "%d\n", objectHotel->basePrice);
+    fprintf(saveFile, "%d\n", objectHotel->baseCapacityPrice);
+    fprintf(saveFile, "%d\n", objectHotel->size);
+    for (int i = 0; i < objectHotel->size; i++)
     {
-        fprintf(saveFile, "%d\n", hotelToSave->rooms[i].number);
-        fprintf(saveFile, "%d\n", hotelToSave->rooms[i].capacity);
-        fprintf(saveFile, "%d\n", hotelToSave->rooms[i].roomType);
+        fprintf(saveFile, "%d\n", objectHotel->rooms[i].number);
+        fprintf(saveFile, "%d\n", objectHotel->rooms[i].capacity);
+        fprintf(saveFile, "%d\n", objectHotel->rooms[i].roomType);
     }
+}
+
+
+void PrintRoom(Room* objectRoom)
+{
+    // Функция для форматированного вывода на экран информации о конкретной
+    // комнате.
+    //
+    // Room* objectRoom - указатель на комнату, информацию о которой
+    // ... нужно вывести.
+    char roomTypeName[20];
+    if (objectRoom->roomType == SUITE)
+    {
+        strcpy(roomTypeName, "Suite");
+    }
+    if (objectRoom->roomType == APARTMENT)
+    {
+        strcpy(roomTypeName, "Apartment");
+    }
+    if (objectRoom->roomType == LUX)
+    {
+        strcpy(roomTypeName, "Lux");
+    }
+    if (objectRoom->roomType == STUDIO)
+    {
+        strcpy(roomTypeName, "Studio");
+    }
+    if (objectRoom->roomType == JUNISUITE)
+    {
+        strcpy(roomTypeName, "Junior studio");
+    }
+    printf("Room #%d:\nCapacity: %d\nType: %s\nPrice: %d\n\n",
+           objectRoom->number,
+           objectRoom->capacity,
+           roomTypeName,
+           objectRoom->price);
+}
+
+
+void PrintHotel(Hotel* objectHotel, Filter filter)
+{
+    // Функция для форматированного вывода на экран количества комнат в наборе
+    // и информации о каждой комнаты, подхожящей под фильтр.
+    //
+    // Hotel* objectHotel - указатель на набор комнат, который нужно вывести
+    // Filter filter - набор фильтров для избирательного вывода информации
+    // ... о комнатах
+    printf("Rooms amount: %d\n\n", objectHotel->size);
+    for (int i = 0; i < objectHotel->size; i++)
+    {
+        if (!filter.isFiltered ||
+            (filter.minCapacity <= objectHotel->rooms[i].capacity ||
+             filter.minCapacity <= 0) &&
+            (filter.roomType == objectHotel->rooms[i].roomType ||
+             filter.roomType <= JUNISUITE || filter.roomType >= SUITE) &&
+            (filter.maxPrice >= objectHotel->rooms[i].price ||
+             filter.maxPrice <= 0) &&
+            filter.minPrice <= objectHotel->rooms[i].price)
+        {
+            PrintRoom(&objectHotel->rooms[i]);
+        }
+    }
+}
+
+
+Room* FindRoom(Hotel* objectHotel, int roomNumber)
+{
+    // Функция для нахождения комнаты по номеру. Возвращает указатель на
+    // найденную комнату, или NULL, если комнаты с таким номером нет.
+    //
+    // Hotel* objectHotel - указатель на набор комнат, в котором выполняется
+    // .. поиск
+    // int roomNumber - номер комнаты, которую нужно найти
+    for (int i = 0; i < objectHotel->size; i++)
+    {
+        if (objectHotel->rooms[i].number == roomNumber)
+        {
+            return &objectHotel->rooms[i];
+        }
+    }
+    return NULL;
 }
 
 
 void AddRoom(Hotel* objectHotel, int number, int capacity, int roomType)
 {
-    if (!objectHotel->isFilled)
+    // Функция для добавление комнаты в набор.
+    // Hotel* objectHotel - указатель на набор комнат, в который добавляется
+    // ... комната
+    // int number - номер комнаты
+    // int capacity - вместимость номера
+    // int roomType - комфортабельность номера
+   if (!objectHotel->isFilled)
     {
         objectHotel->size = 1;
         objectHotel->rooms = (Room*) malloc(sizeof(Room));
@@ -290,6 +376,11 @@ void AddRoom(Hotel* objectHotel, int number, int capacity, int roomType)
     }
     else
     {
+        if (FindRoom(objectHotel, number) != NULL)
+        {
+            printf("Room with such number already exists!\n");
+            return;
+        }
         objectHotel->size++;
         objectHotel->rooms = (Room*) realloc(objectHotel->rooms,
                                              objectHotel->size *
@@ -301,42 +392,73 @@ void AddRoom(Hotel* objectHotel, int number, int capacity, int roomType)
     objectHotel->rooms[objectHotel->size - 1].roomType = roomType;
     CalculateRoomPrice(&objectHotel->rooms[objectHotel->size - 1],
                        objectHotel);
+    printf("Room added! Price is %d\n",
+           objectHotel->rooms[objectHotel->size - 1].price);
 }
 
 
-void PrintHotel(Hotel* hotelToPrint)
+void DeleteRoom(Hotel* objectHotel, int number)
 {
-    printf("Rooms amount: %d\n\n", hotelToPrint->size);
-    for (int i = 0; i < hotelToPrint->size; i++)
+    // Функция для удаления комнаты из набора по номеру.
+    //
+    // Hotel* objectHotel - указатель на набор, из которого нужно
+    // ... удалить комнату
+    // int number - номер комнаты, которую нужно удалить
+    if (FindRoom(objectHotel, number) == NULL)
     {
-        int roomType;
-        roomType = hotelToPrint->rooms[i].roomType;
-        char roomTypeName[20];
-        if (roomType == SUITE)
-        {
-            strcpy(roomTypeName, "Suite");
-        }
-        if (roomType == APARTMENT)
-        {
-            strcpy(roomTypeName, "Apartment");
-        }
-        if (roomType == LUX)
-        {
-            strcpy(roomTypeName, "Lux");
-        }
-        if (roomType == STUDIO)
-        {
-            strcpy(roomTypeName, "Studio");
-        }
-        if (roomType == JUNISUITE)
-        {
-            strcpy(roomTypeName, "Junior studio");
-        }
-        printf("Room #%d:\nCapacity: %d\nType: %s\nPrice: %d\n\n",
-               hotelToPrint->rooms[i].number, hotelToPrint->rooms[i].capacity,
-               roomTypeName, hotelToPrint->rooms[i].price);
-
+        printf("Room with such number doesn't exist!\n\n");
+        return;
     }
+    Room* boxRooms;
+    boxRooms = (Room*) malloc((objectHotel->size - 1) * sizeof(Room));
+    int roomIsSkipped = 0;
+    for (int i = 0; i < objectHotel->size; i++)
+    {
+        if (objectHotel->rooms[i].number != number)
+        {
+            boxRooms[i - roomIsSkipped] = objectHotel->rooms[i];
+        }
+        else
+        {
+            roomIsSkipped++;
+        }
+    }
+    free(objectHotel->rooms);
+    objectHotel->rooms = boxRooms;
+    objectHotel->size--;
+    printf("Deleted room #%d\n\n", number);
+}
+
+
+int PriceComparator(Room* room1, Room* room2)
+{
+    // Компаратор для сортировки комнат по
+    // цене.
+    return room1->price > room2->price;
+}
+
+
+int CapacityComparator(Room* room1, Room* room2)
+{
+    // Компаратор для сортировки комнат по
+    // вместимости.
+    return room1->capacity > room2->capacity;
+}
+
+
+int TypeComparator(Room* room1, Room* room2)
+{
+    // Компаратор для сортировки комнат по
+    // комфортабельности.
+    return room1->roomType > room2->roomType;
+}
+
+
+int NumberComparator(Room* room1, Room* room2)
+{
+    // Компаратор для сортировки комнат по
+    // номеру.
+    return room1->number > room2->number;
 }
 
 
@@ -347,28 +469,36 @@ int main()
     object.baseCapacityPrice = BASE_CAPACITY_PRICE;
     object.isFilled = false;
 
-    bool isFiltered;
-    isFiltered = false;
+    Filter filter;
+    filter.isFiltered = false;
 
     int operationCode;
     while (true)
     {
+        int subOperationCode;
         if (!object.isFilled)
         {
-            printf("\nNO DATABASE\nLoad or start creating new rooms.");
+            printf("\nNO DATABASE\nLoad it "
+                   "or start creating new rooms.");
+        }
+        if (filter.isFiltered)
+        {
+            printf("\nFILTERED\n");
         }
         printf("\n1. Load data from savefile.\n"
                "2. Save current data to savefile.\n"
                "3. Add new room.\n"
                "4. Delete existing room.\n"
-               "5. Print all data.\n"
-               "6. Print data sorted.\n"
+               "5. Print data with filters.\n"
+               "6. Sort database.\n"
                "7. Change filter settings.\n"
-               "8. Quit program without saving.\n\n");
+               "8. Get room info.\n"
+               "9. Quit without saving.\n\n");
         operationCode = CycleInputInt(
                 "Choose the command and enter its number",
-                OperationInputChecker);
+                MainMenuInputChecker);
 
+        // Загрузка базы из документа "savefile.txt"
         if (operationCode == LOAD_FROM_FILE)
         {
             FILE* savefile;
@@ -385,182 +515,206 @@ int main()
             fclose(savefile);
         }
 
+        // Сохранение текущей базы данных в документ "savefile.txt"
         if (operationCode == SAVE_TO_FILE)
         {
-            FILE* savefile;
-            savefile = fopen("savefile.txt", "w");
-            if (savefile == NULL)
+            if (object.isFilled)
             {
-                printf("Couldn't write new data!\n");
+                FILE* savefile;
+                savefile = fopen("savefile.txt", "w");
+                if (savefile == NULL)
+                {
+                    printf("Couldn't write new data!\n");
+                }
+                else
+                {
+                    SaveHotel(savefile, &object);
+                }
+                fclose(savefile);
             }
             else
             {
-                SaveHotel(savefile, &object);
+                printf("NO DATABASE\n\n");
             }
-            fclose(savefile);
         }
 
+        // Добавление комнаты
         if (operationCode == ADD_ROOM)
         {
-            int number = CycleInputInt("Enter room's number",
-                                       PositiveIntInputChecker);
-            int capacity = CycleInputInt("Enter room's capacity",
-                                         PositiveIntInputChecker);
-            int roomType = CycleInputInt("Choose room's type:\n"
-                                         "1. Junior suite.\n"
-                                         "2. Studio.\n"
-                                         "3. Lux.\n"
-                                         "4. Apartment.\n"
-                                         "5. Suite.\n",
-                                         RoomTypeInputChecker);
+            int number;
+            number = CycleInputInt("Enter room's number",
+                                   PositiveIntInputChecker);
+            int capacity;
+            capacity = CycleInputInt("Enter room's capacity",
+                                     PositiveIntInputChecker);
+            int roomType;
+            roomType = CycleInputInt("Choose room's type:\n"
+                                     "1. Junior suite.\n"
+                                     "2. Studio.\n"
+                                     "3. Lux.\n"
+                                     "4. Apartment.\n"
+                                     "5. Suite.\n",
+                                     RoomTypeInputChecker);
             AddRoom(&object, number, capacity, roomType);
-            printf("Room added! Price is %d\n", object.rooms->price);
         }
 
+        // Удаление комнаты
+        if (operationCode == DELETE_ROOM)
+        {
+            if (object.isFilled)
+            {
+                int room;
+                room = CycleInputInt("Enter room's number",
+                                     PositiveIntInputChecker);
+                DeleteRoom(&object, room);
+            }
+            else
+            {
+                printf("NO DATABASE\n\n");
+            }
+        }
+
+        // Вывод набора комнат с учётом фильтров
         if (operationCode == PRINT)
         {
-            PrintHotel(&object);
+            if (object.isFilled)
+            {
+                PrintHotel(&object, filter);
+            }
+            else
+            {
+                printf("NO DATABASE\n\n");
+            }
         }
 
+        // Вход в меню сортировки
+        if (operationCode == SORT)
+        {
+            subOperationCode = CycleInputInt("\n1. Sort by price."
+                                             "\n2. Sort by capacity."
+                                             "\n3. Sort by type."
+                                             "\n4. Sort by room's number."
+                                             "\n5. Back.\n",
+                                             SortMenuInputChecker);
 
+            // Сортировка по цене
+            if (subOperationCode == SORT_BY_PRICE)
+            {
+                qsort(object.rooms, object.size, sizeof(Room),
+                      (int (*)(const void*, const void*)) PriceComparator);
+            }
+
+            // Сортировка по вместимости
+            if (subOperationCode == SORT_BY_CAPACITY)
+            {
+                qsort(object.rooms, object.size, sizeof(Room),
+                      (int (*)(const void*, const void*)) CapacityComparator);
+            }
+
+            // Сортирока по комфортабельности
+            if (subOperationCode == SORT_BY_TYPE)
+            {
+                qsort(object.rooms, object.size, sizeof(Room),
+                      (int (*)(const void*, const void*)) TypeComparator);
+            }
+
+            // Сортировка по номеру
+            if (subOperationCode == SORT_BY_NUMBER)
+            {
+                qsort(object.rooms, object.size, sizeof(Room),
+                      (int (*)(const void*, const void*)) NumberComparator);
+            }
+
+            // Выход из меню сортировки без действий
+            if (subOperationCode == SORT_CANCEL)
+            {
+                printf("Sorting cancelled!\n\n");
+                continue;
+            }
+
+            // Вывод отсортированной базы данных
+            printf("Sorted!\n");
+            PrintHotel(&object, filter);
+        }
+
+        // Вход в меню настройки фильтров
+        if (operationCode == FILTERS)
+        {
+            subOperationCode = CycleInputInt("1. Set new filters."
+                                             "\n2. Reset all filters."
+                                             "\n3. Back.",
+                                             FilterMenuInputChecker);
+
+            // Установка нового набора фильтра
+            if (subOperationCode == FILTERS_SET)
+            {
+                filter.minCapacity = CycleInputInt(
+                        "Enter room's minimal capacity"
+                        "\nEnter number < 1 to skip",
+                        NULL);
+                filter.roomType = CycleInputInt("\nChoose room's type:"
+                                                "\n1. Junior suite."
+                                                "\n2. Studio."
+                                                "\n3. Lux."
+                                                "\n4. Apartment."
+                                                "\n5. Suite."
+                                                "\n Different number to"
+                                                " skip",
+                                                NULL);
+
+                filter.maxPrice = CycleInputInt(
+                        "Enter room's maximum price"
+                        "\nEnter number < 1 to skip",
+                        NULL);
+                filter.minPrice = CycleInputInt(
+                        "Enter room's minimum price"
+                        "\nEnter number < 1 to skip",
+                        NULL);
+
+                // Фиксация факта включения фильтров, функция вывода теперь
+                // будет проходить этап фильтрации
+                filter.isFiltered = true;
+            }
+
+            // Отключение фильтрации
+            if (subOperationCode == FILTERS_RESET)
+            {
+                // Для отключения фильтрации достаточно просто задать
+                // этой переменной false. Т.к. при этом этап фильтрации будет
+                // пропускаться функцией вывода. Если фильтры понадобится
+                // включить - значения остальныйх полей Filter filter в любом
+                // случае будут заданы заново.
+                filter.isFiltered = false;
+                printf("\nFilters are reset!\n");
+            }
+        }
+
+        // Вывод информации о комнате по её номеру
+        if (operationCode == FIND_BY_NUMBER)
+        {
+            int number;
+            number = CycleInputInt("Enter room's number",
+                                   PositiveIntInputChecker);
+            Room* result;
+            result = FindRoom(&object, number);
+            if (result == NULL)
+            {
+                printf("\nNo such room!\n\n");
+            }
+            else
+            {
+                PrintRoom(result);
+            }
+
+        }
+
+        // Выход из программы
         if (operationCode == QUIT)
         {
             break;
         }
     }
+    // Очистка памяти
+    FreeHotel(&object);
     return 0;
 }
-
-
-/*
-        // Перечисление кодов операций для организации главного меню.
-        LOAD_FROM_FILE = 1,
-        SAVE_TO_FILE = 2,
-        ADD_ROOM = 3,
-        DELETE_ROOM = 4,
-        PRINT = 5,
-        PRINT_SORTED = 6,
-        PRINT_SORTED_BY_PRICE = 1,
-        PRINT_SORTED_BY_CAPACITY = 2,
-        PRINT_SORTED_BY_TYPE = 3,
-        FILTER_SETTINGS = 7,
-        SET_FILTERS = 1,
-        RESET_FILTERS = 2,
-        QUIT = 8
-    };
-        // Ввод строки к анализу с клавиатуры
-        if (operationCode == KEYBOARD_INPUT)
-        {
-            FreeDynArrStr(&objStr);
-            FreeDynArrTokens(&tokens);
-            objStr.content = CycleInputString("Enter string to analyze",
-                                              &MathCharsInputChecker);
-            objStr.isFilled = true;
-            objStr.length = strlen(objStr.content);
-        }
-
-        // Вывод строки к анализу в консоль
-        if (operationCode == SHOW)
-        {
-            if (objStr.isFilled)
-            {
-                printf("%s", objStr.content);
-            }
-            else
-            {
-                printf("No object string!\n");
-            }
-        }
-
-        // Выполнение анализа
-        if (operationCode == TASK)
-        {
-            FreeDynArrTokens(&tokens);
-            if (!objStr.isFilled)
-            {
-                printf("No object string!\n");
-            }
-            else
-            {
-                // Выделение памяти под массив токенов
-                tokens.content = (SomeToken*) malloc(
-                        objStr.length * sizeof(SomeToken * ));
-                tokens.isFilled = true;
-                for (int i = 0; i < objStr.length; i++)
-                {
-                    // Непосредственно анализ
-                    if (objStr.content[i] >= '0' && objStr.content[i] <= '9')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "DIGIT");
-                    }
-                    if (objStr.content[i] == '/')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "DIVISION");
-                    }
-                    if (objStr.content[i] == '.')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "DOT");
-                    }
-                    if (objStr.content[i] == '+')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "PLUS");
-                    }
-                    if (objStr.content[i] == '-')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "MINUS");
-                    }
-                    if (objStr.content[i] == '*')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "MULTIPL");
-                    }
-                    if (objStr.content[i] == ')')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "CLOSE_PARANTH");
-                    }
-                    if (objStr.content[i] == '(')
-                    {
-                        tokens.content[i].content = objStr.content[i];
-                        strcpy(tokens.content[i].tokenName, "OPEN_PARANTH");
-                    }
-                }
-            }
-
-
-        }
-
-        // Вывод результатов анализа в консоль
-        if (operationCode == CONSOLE_OUTPUT)
-        {
-            if (!tokens.isFilled)
-            {
-                printf("No results for current string!\n");
-            }
-            else
-            {
-                for (int i = 0; i < objStr.length; i++)
-                {
-                    printf("%s, %c\n", tokens.content[i].tokenName,
-                           tokens.content[i].content);
-                }
-            }
-        }
-
-        // Выход из меню
-        if (operationCode == QUIT)
-        {
-            break;
-        }
-    }
-    // Очистка памяти и завершение программы
-    FreeDynArrStr(&objStr);
-    FreeDynArrTokens(&tokens);
-    return 0;
-}
- */

@@ -636,18 +636,17 @@ ListLink* DeleteRelation(ListLink* relationToDelete)
     {
         return NULL;
     }
-    free(relationToDelete->content);
     return ListLinkDelete(relationToDelete);
 }
 
 
-ListLink* DeleteOrder(ListLink* orderLinkToDelete, ListLink* relations)
+ListLink* DeleteOrder(ListLink* orderLinkToDelete, ListLink** relations)
 {
     if (orderLinkToDelete == NULL)
     {
         return NULL;
     }
-    ListLink* i = ListLinkHead(relations);
+    ListLink* i = ListLinkHead(*relations);
     while (i != NULL)
     {
         ListLink* relationLinkToDelete;
@@ -657,20 +656,20 @@ ListLink* DeleteOrder(ListLink* orderLinkToDelete, ListLink* relations)
         i = i->next;
         if (relation->order == orderLinkToDelete->content)
         {
-            DeleteRelation(relationLinkToDelete);
+            *relations = DeleteRelation(relationLinkToDelete);
         }
     }
     return ListLinkDelete(orderLinkToDelete);
 }
 
 
-ListLink* DeleteProduct(ListLink* productLinkToDelete, ListLink* relations)
+ListLink* DeleteProduct(ListLink* productLinkToDelete, ListLink** relations)
 {
     if (productLinkToDelete == NULL)
     {
         return NULL;
     }
-    ListLink* i = ListLinkHead(relations);
+    ListLink* i = ListLinkHead(*relations);
     while (i != NULL)
     {
         ListLink* relationLinkToDelete;
@@ -680,7 +679,7 @@ ListLink* DeleteProduct(ListLink* productLinkToDelete, ListLink* relations)
         i = i->next;
         if (relation->product == productLinkToDelete->content)
         {
-            DeleteRelation(relationLinkToDelete);
+            *relations = DeleteRelation(relationLinkToDelete);
         }
     }
     return ListLinkDelete(productLinkToDelete);
@@ -1019,14 +1018,14 @@ int main()
             {
                 char* name;
                 name = CycleInputString("Enter owner's name");
-                orders = DeleteOrder(FindOrder(orders, name), relations);
+                orders = DeleteOrder(FindOrder(orders, name), &relations);
                 free(name);
             }
             if (subOperationCode == DELETE_PRODUCT)
             {
                 char* name;
                 name = CycleInputString("Enter product's name");
-                products = DeleteProduct(FindProduct(products, name), relations);
+                products = DeleteProduct(FindProduct(products, name), &relations);
                 free(name);
             }
         }
@@ -1180,6 +1179,10 @@ int main()
     }
     ListLinkFree(object.rooms);
          *///return 0;
+        if (operationCode == QUIT)
+        {
+            break;
+        }
     }
     return 0;
 }

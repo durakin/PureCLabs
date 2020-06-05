@@ -4,7 +4,7 @@
 #include <malloc.h>
 
 #include "Input.h"
-
+#include "Constants.h"
 
 enum SymbolCodes
 {

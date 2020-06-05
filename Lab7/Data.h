@@ -49,6 +49,8 @@ ListLink* AddRelation(ListLink* objectList, ListLink* order,
 ListLink* DeleteRelation(ListLink* relationToDelete);
 ListLink* DeleteOrder(ListLink* orderLinkToDelete, ListLink** relations);
 ListLink* DeleteProduct(ListLink* productLinkToDelete, ListLink** relations);
-
+void PrintFileOrder(FILE* saveFile, Order* objectOrder);
+void PrintFileProduct(FILE* saveFile, Product* objectProduct);
+void PrintFileRelation(FILE* saveFile, Relation* relation);
 
 #endif //DATA_H

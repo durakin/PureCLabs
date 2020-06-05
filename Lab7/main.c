@@ -31,13 +31,11 @@ enum OperationsCodes
     SORT_ORDERS = 6,
         SORT_ORDERS_ORD = 1,
         SORT_ORDERS_SHIP = 2,
-        SORT_ORDERS_NAME = 3,
-        SORT_ORDERS_BACK = 4,
+        SORT_ORDERS_BACK = 3,
     SORT_PRODUCTS = 7,
         SORT_PRODUCTS_PRICE = 1,
         SORT_PRODUCTS_WEIGHT = 2,
-        SORT_PRODUCTS_NAME = 3,
-        SORT_PRODUCTS_BACK = 4,
+        SORT_PRODUCTS_BACK = 3,
     QUIT = 8,
 };
 
@@ -109,6 +107,137 @@ bool SortProductsMenuInputChecker(int operationCode)
 }
 
 
+bool CompOrdersOrderDate(Order* first, Order* second)
+{
+    if (first->ordYear == second->ordYear)
+    {
+        if (first->ordMonth == second->ordMonth)
+        {
+            return  (first->ordDay > second->ordDay);
+        }
+        return (first->ordMonth > second->ordMonth);
+    }
+    return first->ordYear>second->ordYear;
+}
+
+
+bool CompOrdersShipDate(Order* first, Order* second)
+{
+    if (first->shipYear == second->shipYear)
+    {
+        if (first->shipMonth == second->shipMonth)
+        {
+            return  (first->shipDay > second->shipDay);
+        }
+        return (first->shipMonth> second->shipMonth);
+    }
+    return first->shipYear>second->shipYear;
+}
+
+
+bool CompProductsPrice(Product* first, Product* second)
+{
+    return first->price > second->price;
+}
+
+
+bool CompProductsWeight(Product* first, Product* second)
+{
+    return first->weight > second->weight;
+}
+
+
+void SaveData(FILE* saveFile, ListLink* orders, ListLink* products,
+              ListLink* relations)
+{
+    ListLink* i;
+
+    int ordersSize;
+    ordersSize = ListLinkSize(orders);
+    fprintf(saveFile,"%d\n", ordersSize);
+    i = ListLinkHead(orders);
+    while (i!=NULL)
+    {
+        PrintFileOrder(saveFile, i->content);
+        i = i->next;
+    }
+
+    int productsSize;
+    productsSize = ListLinkSize(products);
+    fprintf(saveFile,"%d\n", productsSize);
+    i = ListLinkHead(products);
+    while (i!=NULL)
+    {
+        PrintFileProduct(saveFile, i->content);
+        i = i->next;
+    }
+
+    int relationsSize;
+    relationsSize = ListLinkSize(relations);
+    fprintf(saveFile,"%d\n", relationsSize);
+    i = ListLinkHead(relations);
+    while (i!=NULL)
+    {
+        PrintFileRelation(saveFile, i->content);
+        i = i->next;
+    }
+}
+
+
+void LoadData(FILE* saveFile, ListLink** orders, ListLink** products,
+              ListLink** relations)
+{
+    int ordersSize;
+    fscanf(saveFile, "%d", &ordersSize);
+    for (int i = 0; i < ordersSize; i++)
+    {
+        char owner[INPUT_SIZE];
+        int ordDay;
+        int ordMonth;
+        int ordYear;
+        int shipDay;
+        int shipMonth;
+        int shipYear;
+        fscanf(saveFile, "%s", owner);
+        fscanf(saveFile, "%d", &ordMonth);
+        fscanf(saveFile, "%d", &ordDay);
+        fscanf(saveFile, "%d", &ordYear);
+        fscanf(saveFile, "%d", &shipMonth);
+        fscanf(saveFile, "%d", &shipDay);
+        fscanf(saveFile, "%d", &shipYear);
+        *orders = AddOrder(*orders, owner, ordDay, ordMonth, ordYear, shipDay,
+                          shipMonth, shipYear);
+
+    }
+    int productsSize;
+    fscanf(saveFile, "%d", &productsSize);
+    for (int i = 0; i < productsSize; i++)
+    {
+        char name[INPUT_SIZE];
+        int price;
+        int weight;
+        fscanf(saveFile, "%s", name);
+        fscanf(saveFile, "%d", &price);
+        fscanf(saveFile, "%d", &weight);
+        *products = AddProduct(*products, name, price, weight);
+    }
+    int relationsSize;
+    fscanf(saveFile, "%d", &relationsSize);
+    for (int i = 0; i < relationsSize; i++)
+    {
+        char owner[INPUT_SIZE];
+        char product[INPUT_SIZE];
+        fscanf(saveFile, "%s", product);
+        fscanf(saveFile, "%s", owner);
+        ListLink* ownerLink;
+        ListLink* productLink;
+        ownerLink = FindOrder(*orders, owner);
+        productLink = FindProduct(*products, product);
+        *relations = AddRelation(*relations, ownerLink, productLink);
+    }
+}
+
+
 int main()
 {
     ListLink* orders;
@@ -133,6 +262,45 @@ int main()
         operationCode = CycleInputInt(
                 "Choose the command and enter its number",
                 MainMenuInputChecker);
+
+        if (operationCode == LOAD_FROM_FILE)
+        {
+            FILE* savefile;
+            savefile = fopen("savefile.txt", "r");
+            if (savefile == NULL)
+            {
+                printf("Couldn't open savefile!\n");
+            }
+            else
+            {
+                ListLinkFree(orders);
+                orders = NULL;
+                ListLinkFree(products);
+                products = NULL;
+                ListLinkFree(relations);
+                relations = NULL;
+                LoadData(savefile, &orders, &products, &relations);
+                printf("Loaded!\n");
+            }
+            fclose(savefile);
+        }
+
+        if (operationCode == SAVE_TO_FILE)
+        {
+
+            FILE* savefile;
+            savefile = fopen("savefile.txt", "w");
+            if (savefile == NULL)
+            {
+                printf("Couldn't write new data!\n");
+            }
+            else
+            {
+                SaveData(savefile, orders, products, relations);
+                printf("Saved!\n");
+            }
+            fclose(savefile);
+        }
 
         if (operationCode == ADD)
         {
@@ -248,6 +416,7 @@ int main()
             if (subOperationCode == PRINT_BY_ORDER)
             {
                 char* name;
+                fflush(stdout);
                 name = CycleInputString("Enter owner's name");
                 ListLink* order;
                 order = FindOrder(orders, name);
@@ -263,6 +432,7 @@ int main()
             if (subOperationCode == PRINT_BY_PRODUCT)
             {
                 char* name;
+                fflush(stdout);
                 name = CycleInputString("Enter product's name");
                 ListLink* product;
                 product = FindOrder(products, name);
@@ -280,7 +450,7 @@ int main()
         if (operationCode == DELETE)
         {
             printf("\n1. Delete order.\n"
-                   "2. Delete product."
+                   "2. Delete product.\n"
                    "3.Back\n\n");
             subOperationCode = CycleInputInt(
                     "Choose the command and enter its number",
@@ -289,15 +459,53 @@ int main()
             {
                 char* name;
                 name = CycleInputString("Enter owner's name");
-                orders = DeleteOrder(FindOrder(orders, name), &relations);
-                free(name);
+                if(FindOrder(orders, name)!=NULL)
+                {
+                    orders = DeleteOrder(FindOrder(orders, name), &relations);
+                    free(name);
+                }
             }
             if (subOperationCode == DELETE_PRODUCT)
             {
                 char* name;
                 name = CycleInputString("Enter product's name");
-                products = DeleteProduct(FindProduct(products, name), &relations);
-                free(name);
+                if (FindProduct(products, name) != NULL)
+                {
+                    products = DeleteProduct(FindProduct(products, name),
+                                             &relations);
+                    free(name);
+                }
+            }
+        }
+
+        if (operationCode == SORT_ORDERS)
+        {
+            subOperationCode = CycleInputInt("\n1. Sort by order date."
+                                             "\n2. Sort by shipment date."
+                                             "\n3. Back.\n", SortOrdersMenuInputChecker);
+            if (subOperationCode == SORT_ORDERS_ORD)
+            {
+                ListLinkBubbleSort(orders, CompOrdersOrderDate);
+            }
+
+            if (subOperationCode == SORT_ORDERS_SHIP)
+            {
+                ListLinkBubbleSort(orders, CompOrdersShipDate);
+            }
+        }
+
+        if (operationCode == SORT_PRODUCTS)
+        {
+            subOperationCode = CycleInputInt("\n1. Sort by products price."
+                                             "\n2. Sort by products weight."
+                                             "\n3. Back.\n", SortProductsMenuInputChecker);
+            if (subOperationCode == SORT_PRODUCTS_PRICE)
+            {
+                ListLinkBubbleSort(products, CompProductsPrice);
+            }
+            if (subOperationCode == SORT_PRODUCTS_WEIGHT)
+            {
+                ListLinkBubbleSort(products, CompProductsWeight);
             }
         }
 
@@ -306,6 +514,8 @@ int main()
             break;
         }
     }
-
+    ListLinkFree(orders);
+    ListLinkFree(products);
+    ListLinkFree(relations);
     return 0;
 }

@@ -1,5 +1,6 @@
 #include <malloc.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "ListLink.h"
 
@@ -12,7 +13,7 @@ ListLink* ListLinkHead(ListLink* objectLink)
     // ... необходимо найти
     ListLink* position;
     position = objectLink;
-    if (position == NULL)
+    if (objectLink == NULL)
     {
         return NULL;
     }
@@ -77,6 +78,7 @@ ListLink* ListLinkDelete(ListLink* linkToDelete)
     {
         linkToReturn = linkToDelete->next;
     }
+    free(linkToDelete->content);
     free(linkToDelete);
     return linkToReturn;
 }
@@ -88,7 +90,6 @@ void ListLinkSwap(ListLink* firstLink, ListLink* secondLink)
     //
     // ListLink* firstLink - элемент списка, который нужно поменять с другим
     // ListLink* secondLink - элемент списка, который нужно поменять с другим
-    void* roomDataBox;
     void* contentBox;
     contentBox = firstLink->content;
     firstLink->content = secondLink->content;
@@ -98,11 +99,6 @@ void ListLinkSwap(ListLink* firstLink, ListLink* secondLink)
 
 int ListLinkSize(ListLink* objectLink)
 {
-    // Функция для нахождения количества элементов списка.
-    // Возвращает количество элементов списка.
-    //
-    // ListLink* objectLink - элемент списка, размер которого
-    // ... необходимо найти
     ListLink* position;
     if (objectLink == NULL)
     {
@@ -120,13 +116,8 @@ int ListLinkSize(ListLink* objectLink)
 }
 
 
-void ListLinkBubbleSort(ListLink* objectLink, int(* comparator)(void*, void*))
+void ListLinkBubbleSort(ListLink* objectLink, bool(* comparator)(void*, void*))
 {
-    // Функция, сортирующая методом пузырьков двусвязный список.
-    //
-    // ListLink* objectLink - элемент списка, который нужно отсортировать
-    // int(* comparator)(Room*, Room*) - функция-компоратор по аналогии
-    // ... с функцией qsort()
     ListLink* position;
     position = NULL;
     ListLink* index;
@@ -143,4 +134,20 @@ void ListLinkBubbleSort(ListLink* objectLink, int(* comparator)(void*, void*))
             }
         }
     }
+}
+
+
+void ListLinkFree(ListLink* objectLink)
+{
+    ListLink* i;
+    ListLink* linkToFree;
+    i = ListLinkHead(objectLink);
+    while(i!=NULL)
+    {
+        linkToFree = i;
+        i = i->next;
+        free(linkToFree->content);
+        free(linkToFree);
+    }
+
 }

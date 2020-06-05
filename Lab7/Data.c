@@ -14,7 +14,7 @@ void PrintOrder(Order* objectOrder)
     // Room* objectRoom - указатель на комнату, информацию о которой
     // ... нужно вывести;
 
-    printf("ORDER by: %s\nDate of order: %d.%d.%d\nDate of shipment:"
+    printf("ORDER by: %s\nDate of order: %d.%d.%d\nDate of shipment: "
            "%d.%d.%d\n", objectOrder->owner, objectOrder->ordMonth,
            objectOrder->ordDay, objectOrder->ordYear, objectOrder->shipMonth,
            objectOrder->shipDay, objectOrder->shipYear);
@@ -26,10 +26,25 @@ void PrintOrder(Order* objectOrder)
 }
 
 
+void PrintFileOrder(FILE* saveFile, Order* objectOrder)
+{
+    fprintf(saveFile,"%s\n%d\n%d\n%d\n%d\n%d\n%d\n", objectOrder->owner,
+            objectOrder->ordMonth, objectOrder->ordDay, objectOrder->ordYear,
+            objectOrder->shipMonth,
+            objectOrder->shipDay, objectOrder->shipYear);
+}
+
 void PrintProduct(Product* objectProduct)
 {
     printf("PRODUCT: %s\nPrice: %d\nWeight: %d\n", objectProduct->name,
            objectProduct->price, objectProduct->weight);
+}
+
+
+void PrintFileProduct(FILE* saveFile, Product* objectProduct)
+{
+    fprintf(saveFile, "%s\n%d\n%d\n", objectProduct->name, objectProduct->price,
+            objectProduct->weight);
 }
 
 
@@ -91,6 +106,12 @@ void PrintOrdersByProduct(Product* objectProduct, ListLink* relations)
         }
         i = i->next;
     }
+}
+
+
+void PrintFileRelation(FILE* saveFile, Relation* relation)
+{
+    fprintf(saveFile, "%s\n%s\n", relation->product->name, relation->order->owner);
 }
 
 
@@ -241,10 +262,6 @@ ListLink* DeleteOrder(ListLink* orderLinkToDelete, ListLink** relations)
 
 ListLink* DeleteProduct(ListLink* productLinkToDelete, ListLink** relations)
 {
-    if (productLinkToDelete == NULL)
-    {
-        return NULL;
-    }
     ListLink* i = ListLinkHead(*relations);
     while (i != NULL)
     {

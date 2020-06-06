@@ -8,27 +8,16 @@
 
 void PrintOrder(Order* objectOrder)
 {
-    // Функция для форматированного вывода на экран информации о конкретной
-    // комнате.
-    //
-    // Room* objectRoom - указатель на комнату, информацию о которой
-    // ... нужно вывести;
-
     printf("ORDER by: %s\nDate of order: %d.%d.%d\nDate of shipment: "
            "%d.%d.%d\n", objectOrder->owner, objectOrder->ordMonth,
            objectOrder->ordDay, objectOrder->ordYear, objectOrder->shipMonth,
            objectOrder->shipDay, objectOrder->shipYear);
-
-
-    /*
-
-     */
 }
 
 
 void PrintFileOrder(FILE* saveFile, Order* objectOrder)
 {
-    fprintf(saveFile,"%s\n%d\n%d\n%d\n%d\n%d\n%d\n", objectOrder->owner,
+    fprintf(saveFile, "%s\n%d\n%d\n%d\n%d\n%d\n%d\n", objectOrder->owner,
             objectOrder->ordMonth, objectOrder->ordDay, objectOrder->ordYear,
             objectOrder->shipMonth,
             objectOrder->shipDay, objectOrder->shipYear);
@@ -43,7 +32,8 @@ void PrintProduct(Product* objectProduct)
 
 void PrintFileProduct(FILE* saveFile, Product* objectProduct)
 {
-    fprintf(saveFile, "%s\n%d\n%d\n", objectProduct->name, objectProduct->price,
+    fprintf(saveFile, "%s\n%d\n%d\n", objectProduct->name,
+            objectProduct->price,
             objectProduct->weight);
 }
 
@@ -111,7 +101,8 @@ void PrintOrdersByProduct(Product* objectProduct, ListLink* relations)
 
 void PrintFileRelation(FILE* saveFile, Relation* relation)
 {
-    fprintf(saveFile, "%s\n%s\n", relation->product->name, relation->order->owner);
+    fprintf(saveFile, "%s\n%s\n", relation->product->name,
+            relation->order->owner);
 }
 
 
@@ -229,7 +220,7 @@ ListLink* AddRelation(ListLink* objectList, ListLink* order,
 
 ListLink* DeleteRelation(ListLink* relationToDelete)
 {
-    if(relationToDelete == NULL)
+    if (relationToDelete == NULL)
     {
         return NULL;
     }

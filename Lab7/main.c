@@ -9,68 +9,49 @@
 
 enum OperationsCodes
 {
-    // Перечисление кодов операций для организации всех меню.
-    // Команды для главного меню.
     LOAD_FROM_FILE = 1,
     SAVE_TO_FILE = 2,
     ADD = 3,
-        ADD_ORDER = 1,
-        ADD_PRODUCT = 2,
-        ADD_RELATION = 3,
-        ADD_BACK = 4,
+    ADD_ORDER = 1,
+    ADD_PRODUCT = 2,
+    ADD_RELATION = 3,
+    ADD_BACK = 4,
     PRINT = 4,
-        PRINT_ORDERS = 1,
-        PRINT_PRODUCTS = 2,
-        PRINT_BY_ORDER = 3,
-        PRINT_BY_PRODUCT = 4,
-        PRINT_BACK = 5,
+    PRINT_ORDERS = 1,
+    PRINT_PRODUCTS = 2,
+    PRINT_BY_ORDER = 3,
+    PRINT_BY_PRODUCT = 4,
+    PRINT_BACK = 5,
     DELETE = 5,
-        DELETE_ORDER = 1,
-        DELETE_PRODUCT = 2,
-        DELETE_BACK = 3,
+    DELETE_ORDER = 1,
+    DELETE_PRODUCT = 2,
+    DELETE_BACK = 3,
     SORT_ORDERS = 6,
-        SORT_ORDERS_ORD = 1,
-        SORT_ORDERS_SHIP = 2,
-        SORT_ORDERS_BACK = 3,
+    SORT_ORDERS_ORD = 1,
+    SORT_ORDERS_SHIP = 2,
+    SORT_ORDERS_BACK = 3,
     SORT_PRODUCTS = 7,
-        SORT_PRODUCTS_PRICE = 1,
-        SORT_PRODUCTS_WEIGHT = 2,
-        SORT_PRODUCTS_BACK = 3,
+    SORT_PRODUCTS_PRICE = 1,
+    SORT_PRODUCTS_WEIGHT = 2,
+    SORT_PRODUCTS_BACK = 3,
     QUIT = 8,
 };
 
 
 bool MainMenuInputChecker(int operationCode)
 {
-    // Функция для вызова в функциях ввода с проверкой.
-    // Возвращает true, если введенное значение может быть
-    // значением кода операции в главном меню.
-    //
-    // int operationCode - число, которое нужно проверить.
-
     return operationCode >= LOAD_FROM_FILE && operationCode <= QUIT;
 }
 
 
 bool PositiveIntInputChecker(int intToCheck)
 {
-    // Функция для вызова в функциях ввода с проверкой.
-    // Возвращает true, если введенное значение является положительным
-    // числом. В настоящей программе такие значения должны принимать
-    // значения вместимости и цены номера.
-    //
-    // int intToCheck - число, которое нужно проверить.
     return intToCheck > 0;
 }
 
 
 bool AddMenuInputChecker(int operationCode)
 {
-    // Функция для вызова в функциях ввода с проверкой.
-    // Возвращает true, если введенное значение может быть
-    // значением кода операции в меню сортировки.
-    //
-    // int operationCode - число, которое нужно проверить.
     return operationCode >= ADD_ORDER &&
            operationCode <= ADD_BACK;
 }
@@ -78,11 +59,6 @@ bool AddMenuInputChecker(int operationCode)
 
 bool PrintMenuInputChecker(int operationCode)
 {
-    // Функция для вызова в функциях ввода с проверкой.
-    // Возвращает true, если введенное значение может быть
-    // значением кода операции в меню настройки фильтров.
-    //
-    // int operationCode - число, которое нужно проверить.
     return operationCode >= PRINT_ORDERS && operationCode <= PRINT_BACK;
 }
 
@@ -113,11 +89,11 @@ bool CompOrdersOrderDate(Order* first, Order* second)
     {
         if (first->ordMonth == second->ordMonth)
         {
-            return  (first->ordDay > second->ordDay);
+            return (first->ordDay > second->ordDay);
         }
         return (first->ordMonth > second->ordMonth);
     }
-    return first->ordYear>second->ordYear;
+    return first->ordYear > second->ordYear;
 }
 
 
@@ -127,11 +103,11 @@ bool CompOrdersShipDate(Order* first, Order* second)
     {
         if (first->shipMonth == second->shipMonth)
         {
-            return  (first->shipDay > second->shipDay);
+            return (first->shipDay > second->shipDay);
         }
-        return (first->shipMonth> second->shipMonth);
+        return (first->shipMonth > second->shipMonth);
     }
-    return first->shipYear>second->shipYear;
+    return first->shipYear > second->shipYear;
 }
 
 
@@ -154,9 +130,9 @@ void SaveData(FILE* saveFile, ListLink* orders, ListLink* products,
 
     int ordersSize;
     ordersSize = ListLinkSize(orders);
-    fprintf(saveFile,"%d\n", ordersSize);
+    fprintf(saveFile, "%d\n", ordersSize);
     i = ListLinkHead(orders);
-    while (i!=NULL)
+    while (i != NULL)
     {
         PrintFileOrder(saveFile, i->content);
         i = i->next;
@@ -164,9 +140,9 @@ void SaveData(FILE* saveFile, ListLink* orders, ListLink* products,
 
     int productsSize;
     productsSize = ListLinkSize(products);
-    fprintf(saveFile,"%d\n", productsSize);
+    fprintf(saveFile, "%d\n", productsSize);
     i = ListLinkHead(products);
-    while (i!=NULL)
+    while (i != NULL)
     {
         PrintFileProduct(saveFile, i->content);
         i = i->next;
@@ -174,9 +150,9 @@ void SaveData(FILE* saveFile, ListLink* orders, ListLink* products,
 
     int relationsSize;
     relationsSize = ListLinkSize(relations);
-    fprintf(saveFile,"%d\n", relationsSize);
+    fprintf(saveFile, "%d\n", relationsSize);
     i = ListLinkHead(relations);
-    while (i!=NULL)
+    while (i != NULL)
     {
         PrintFileRelation(saveFile, i->content);
         i = i->next;
@@ -206,7 +182,7 @@ void LoadData(FILE* saveFile, ListLink** orders, ListLink** products,
         fscanf(saveFile, "%d", &shipDay);
         fscanf(saveFile, "%d", &shipYear);
         *orders = AddOrder(*orders, owner, ordDay, ordMonth, ordYear, shipDay,
-                          shipMonth, shipYear);
+                           shipMonth, shipYear);
 
     }
     int productsSize;
@@ -402,7 +378,8 @@ int main()
             subOperationCode = CycleInputInt("\n1. Print all orders."
                                              "\n2. Print all products."
                                              "\n3. Print order's content."
-                                             "\n4. Print product's related orders.\n"
+                                             "\n4. Print product's related"
+                                             "orders.\n"
                                              "\n5. Back.\n",
                                              PrintMenuInputChecker);
             if (subOperationCode == PRINT_ORDERS)
@@ -459,7 +436,7 @@ int main()
             {
                 char* name;
                 name = CycleInputString("Enter owner's name");
-                if(FindOrder(orders, name)!=NULL)
+                if (FindOrder(orders, name) != NULL)
                 {
                     orders = DeleteOrder(FindOrder(orders, name), &relations);
                     free(name);
@@ -482,7 +459,8 @@ int main()
         {
             subOperationCode = CycleInputInt("\n1. Sort by order date."
                                              "\n2. Sort by shipment date."
-                                             "\n3. Back.\n", SortOrdersMenuInputChecker);
+                                             "\n3. Back.\n",
+                                             SortOrdersMenuInputChecker);
             if (subOperationCode == SORT_ORDERS_ORD)
             {
                 ListLinkBubbleSort(orders, CompOrdersOrderDate);
@@ -498,7 +476,8 @@ int main()
         {
             subOperationCode = CycleInputInt("\n1. Sort by products price."
                                              "\n2. Sort by products weight."
-                                             "\n3. Back.\n", SortProductsMenuInputChecker);
+                                             "\n3. Back.\n",
+                                             SortProductsMenuInputChecker);
             if (subOperationCode == SORT_PRODUCTS_PRICE)
             {
                 ListLinkBubbleSort(products, CompProductsPrice);

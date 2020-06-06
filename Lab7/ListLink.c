@@ -6,11 +6,6 @@
 
 ListLink* ListLinkHead(ListLink* objectLink)
 {
-    // Функция для поиска первого элемента списка. Возвращает указатель
-    // на первый элемент.
-    //
-    // ListLink* objectLink - элемент списка, первый элемент которого
-    // ... необходимо найти
     ListLink* position;
     position = objectLink;
     if (objectLink == NULL)
@@ -27,11 +22,6 @@ ListLink* ListLinkHead(ListLink* objectLink)
 
 ListLink* ListLinkTail(ListLink* objectLink)
 {
-    // Функция для поиска последнего элемента списка. Возвращает указатель
-    // на последний элемент.
-    //
-    // ListLink* objectLink - элемент списка, последний элемент которого
-    // ... необходимо найти
     ListLink* position;
     position = objectLink;
     if (position == NULL)
@@ -86,10 +76,6 @@ ListLink* ListLinkDelete(ListLink* linkToDelete)
 
 void ListLinkSwap(ListLink* firstLink, ListLink* secondLink)
 {
-    // Функция для замены местами двух элементов списка.
-    //
-    // ListLink* firstLink - элемент списка, который нужно поменять с другим
-    // ListLink* secondLink - элемент списка, который нужно поменять с другим
     void* contentBox;
     contentBox = firstLink->content;
     firstLink->content = secondLink->content;
@@ -116,7 +102,8 @@ int ListLinkSize(ListLink* objectLink)
 }
 
 
-void ListLinkBubbleSort(ListLink* objectLink, bool(* comparator)(void*, void*))
+void
+ListLinkBubbleSort(ListLink* objectLink, bool(* comparator)(void*, void*))
 {
     ListLink* position;
     position = NULL;
@@ -142,7 +129,7 @@ void ListLinkFree(ListLink* objectLink)
     ListLink* i;
     ListLink* linkToFree;
     i = ListLinkHead(objectLink);
-    while(i!=NULL)
+    while (i != NULL)
     {
         linkToFree = i;
         i = i->next;
